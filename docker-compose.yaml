@@ -1,0 +1,52 @@
+version: '3'
+
+
+services:
+
+  db:
+    build:
+      context: ./db
+      dockerfile: Dockerfile
+    image: marddden/fullcycle_docker_db
+    command: --innodb-use-native-aio=0
+    container_name: fullcycle_docker_mysql
+    restart: always
+    tty: true
+    volumes:
+      - ./db/mysql:/var/lib/mysql
+    environment:
+      - MYSQL_DATABASE=nodedb
+      - MYSQL_ROOT_PASSWORD=root
+    networks:
+      - fc_docker_network
+
+  app:
+    build:
+      context: ./node
+      dockerfile: Dockerfile
+    image: marddden/fullcycle_docker_node
+    container_name: fullcycle_docker_node
+    entrypoint: dockerize --wait tcp://db:3306 -timeout 30s docker-entrypoint.sh index.js
+    restart: always
+    tty: true
+    #    volumes:
+            #      - ./node:/usr/src/app
+    networks:
+      - fc_docker_network
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    image: marddden/fullcycle_docker_nginx
+    container_name: fullcycle_docker_nginx
+    restart: always
+    tty: true
+    ports: 
+      - "8080:80"
+    networks:
+      - fc_docker_network
+
+networks:
+  fc_docker_network:
+    driver: bridge
